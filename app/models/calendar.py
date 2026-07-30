@@ -33,7 +33,7 @@ class CalendarEntry(Base):
     platforms = Column(JSON, nullable=False)  # List of target platforms
     
     # Metadata
-    metadata = Column(JSON, nullable=True)
+    extra_metadata = Column(JSON, nullable=True)
     
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow)
