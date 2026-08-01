@@ -42,6 +42,8 @@ loguru==0.7.2
 pytest==7.4.3
 pytest-asyncio==0.21.1
 pytest-cov==4.1.0
+aiosqlite>=0.19.0  # test-only: in-memory DB for the test suite
+asgi-lifespan>=2.1.0  # test-only: drives FastAPI startup/shutdown in tests
 
 # Utilities
 python-dotenv==1.0.0

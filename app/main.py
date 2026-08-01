@@ -9,8 +9,11 @@ from contextlib import asynccontextmanager
 from loguru import logger
 import os
 
+from datetime import datetime
+
 from app.config import settings
 from app.database import init_db
+from app.services.ai_writer import AIWriter
 from app.routers import content, seo, calendar, distribution, analytics
 
 
@@ -18,13 +21,16 @@ from app.routers import content, seo, calendar, distribution, analytics
 async def lifespan(app: FastAPI):
     """Application lifespan manager"""
     logger.info("Starting Content Engine...")
-    
+
     # Initialize database
     await init_db()
-    
+
+    # Single shared AI writer instance for the app's lifetime
+    app.state.ai_writer = AIWriter()
+
     logger.info("Content Engine started successfully")
     yield
-    
+
     logger.info("Shutting down Content Engine...")
 
 
@@ -84,10 +90,11 @@ async def root():
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
+    logger.info("Health check performed")
     return {
         "status": "healthy",
         "service": "content-engine",
-        "timestamp": logger.info("Health check performed")
+        "timestamp": datetime.utcnow().isoformat()
     }
 
 
