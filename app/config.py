@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     
     # Integration
     marketing_automation_url: str = os.getenv("MARKETING_AUTOMATION_URL", "http://localhost:8039")
-    analytics_engine_url: str = os.getenv("ANALYTICS_ENGINE_URL", "http://localhost:8041")
+    analytics_engine_url: str = os.getenv("ANALYTICS_ENGINE_URL", "http://localhost:8042")
     funnel_automation_url: str = os.getenv("FUNNEL_AUTOMATION_URL", "http://localhost:8000")
     
     class Config:
