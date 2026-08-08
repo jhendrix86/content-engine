@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  content-engine:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: content-engine
+    ports:
+      - "8040:8040"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/content
+      - REDIS_URL=redis://redis:6379
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - AI_MODEL=${AI_MODEL:-gpt-4}
+      - UNKEY_ROOT_KEY=${UNKEY_ROOT_KEY}
+      - UNKEY_API_ID=${UNKEY_API_ID}
+      - UNKEY_BASE_URL=${UNKEY_BASE_URL:-https://api.unkey.com/v2}
+      - DEBUG=${DEBUG:-false}
+      - MARKETING_AUTOMATION_URL=http://marketing-automation-engine:8039
+      - ANALYTICS_ENGINE_URL=http://analytics-engine:8042
+      - FUNNEL_AUTOMATION_URL=http://funnel-automation-engine:8000
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - content-network
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: content-postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=content
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - content-network
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: content-redis
+    networks:
+      - content-network
+    restart: unless-stopped
+
+networks:
+  content-network:
+    driver: bridge
+
+volumes:
+  postgres-data:

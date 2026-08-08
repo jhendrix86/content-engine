@@ -3,13 +3,15 @@ Content Engine - Main Application
 AI-powered content generation and management system for the Autonomous Company OS
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from loguru import logger
 import os
 
 from datetime import datetime
+
+from unkey_auth import require_api_key
 
 from app.config import settings
 from app.database import init_db
@@ -51,12 +53,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers
-app.include_router(content.router, prefix="/content", tags=["content"])
-app.include_router(seo.router, prefix="/seo", tags=["seo"])
-app.include_router(calendar.router, prefix="/calendar", tags=["calendar"])
-app.include_router(distribution.router, prefix="/distribution", tags=["distribution"])
-app.include_router(analytics.router, prefix="/analytics", tags=["analytics"])
+# Include routers - gated by Unkey key verification (fails open until
+# UNKEY_ROOT_KEY is configured; see unkey-auth/README.md)
+_auth = [Depends(require_api_key)]
+app.include_router(content.router, prefix="/content", tags=["content"], dependencies=_auth)
+app.include_router(seo.router, prefix="/seo", tags=["seo"], dependencies=_auth)
+app.include_router(calendar.router, prefix="/calendar", tags=["calendar"], dependencies=_auth)
+app.include_router(distribution.router, prefix="/distribution", tags=["distribution"], dependencies=_auth)
+app.include_router(analytics.router, prefix="/analytics", tags=["analytics"], dependencies=_auth)
 
 
 @app.get("/")

@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = False
+        extra = "ignore"  # tolerate env vars owned by other libs (e.g. unkey-auth's UNKEY_*)
 
 
 settings = Settings()
