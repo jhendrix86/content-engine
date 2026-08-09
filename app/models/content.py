@@ -45,7 +45,11 @@ class Content(Base):
     # Content
     body = Column(Text, nullable=True)
     summary = Column(Text, nullable=True)
-    
+
+    # Repurposing: set when this piece was generated FROM another piece
+    # (the "pillar"), rather than from a topic directly.
+    source_content_id = Column(UUID(as_uuid=True), ForeignKey("content.id"), nullable=True)
+
     # Generation metadata
     topic = Column(String(500), nullable=True)
     target_audience = Column(String(255), nullable=True)
@@ -76,6 +80,8 @@ class Content(Base):
     # Relationships
     seo_analysis = relationship("SEOAnalysis", back_populates="content")
     distributions = relationship("Distribution", back_populates="content")
+    source_content = relationship("Content", remote_side=[id], back_populates="derivatives")
+    derivatives = relationship("Content", back_populates="source_content")
     
     def __repr__(self):
         return f"<Content {self.id} - {self.title} - {self.status}>"

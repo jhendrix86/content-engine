@@ -4,7 +4,7 @@ Content router
 
 import uuid
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import select, func
@@ -40,6 +40,11 @@ class UpdateContentRequest(BaseModel):
     body: Optional[str] = None
     summary: Optional[str] = None
     status: Optional[ContentStatus] = None
+
+
+class RepurposeContentRequest(BaseModel):
+    """Request to repurpose an existing piece of content into other formats"""
+    target_types: List[ContentType]
 
 
 @router.post("/generate")
@@ -86,6 +91,65 @@ async def generate_content(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.post("/{content_id}/repurpose")
+async def repurpose_content(
+    content_id: str,
+    request: RepurposeContentRequest,
+    db: AsyncSession = Depends(get_db),
+    ai_writer: AIWriter = Depends(get_ai_writer)
+):
+    """Generate derivative content in other formats from an existing 'pillar' piece"""
+    try:
+        logger.info(f"Repurposing content {content_id} into {[t.value for t in request.target_types]}")
+
+        source = await db.get(Content, uuid.UUID(content_id))
+        if source is None:
+            raise HTTPException(status_code=404, detail=f"Content not found: {content_id}")
+        if not source.body:
+            raise HTTPException(status_code=400, detail="Source content has no body to repurpose")
+
+        derivatives = []
+        for target_type in request.target_types:
+            result = await ai_writer.repurpose(
+                source_body=source.body,
+                target_type=target_type,
+                target_audience=source.target_audience,
+                tone=source.tone,
+            )
+
+            derivative = Content(
+                title=f"{source.title} ({target_type.value})",
+                content_type=target_type,
+                status=ContentStatus.READY if result["success"] else ContentStatus.DRAFT,
+                body=result.get("body"),
+                source_content_id=source.id,
+                topic=source.topic,
+                target_audience=source.target_audience,
+                tone=source.tone,
+                ai_model=result.get("model"),
+                generation_prompt=result.get("prompt"),
+                extra_metadata={"generation_result": result, "repurposed_from": str(source.id)},
+            )
+            db.add(derivative)
+            derivatives.append(derivative)
+
+        await db.commit()
+        for derivative in derivatives:
+            await db.refresh(derivative)
+
+        logger.info(f"Repurposed {len(derivatives)} derivative(s) from {content_id}")
+        return {
+            "source_content_id": str(source.id),
+            "derivatives": [model_to_dict(d) for d in derivatives],
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to repurpose content: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.get("/{content_id}")
 async def get_content(
     content_id: str,
@@ -105,6 +169,33 @@ async def get_content(
         raise
     except Exception as e:
         logger.error(f"Failed to get content: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{content_id}/derivatives")
+async def list_derivatives(
+    content_id: str,
+    db: AsyncSession = Depends(get_db)
+):
+    """List all content repurposed from this piece"""
+    try:
+        logger.info(f"Listing derivatives of {content_id}")
+
+        source = await db.get(Content, uuid.UUID(content_id))
+        if source is None:
+            raise HTTPException(status_code=404, detail=f"Content not found: {content_id}")
+
+        result = await db.execute(
+            select(Content).where(Content.source_content_id == source.id).order_by(Content.created_at.desc())
+        )
+        derivatives = [model_to_dict(d) for d in result.scalars().all()]
+
+        return {"source_content_id": str(source.id), "total": len(derivatives), "derivatives": derivatives}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to list derivatives: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
