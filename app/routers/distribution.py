@@ -1,12 +1,12 @@
 """
 Distribution router
 
-Note: there is no real social/platform posting client anywhere in this
-codebase (no Twitter/LinkedIn/Facebook API wrapper). /publish records a real
-Distribution row (scheduled or pending); /{id}/execute attempts the actual
-post and honestly reports status=FAILED with a clear reason, rather than
-faking a successful platform publish. Wiring a real platform client is a
-separate feature-build task.
+/publish records a real Distribution row (scheduled or pending).
+/{id}/execute attempts the actual post via a real platform client
+(WordPress, dev.to) when one exists and is configured; otherwise it
+honestly reports status=FAILED with a clear reason (unsupported platform,
+missing credentials, or a live error from the platform's API) rather than
+faking a successful publish.
 """
 
 import uuid
@@ -22,11 +22,12 @@ from loguru import logger
 from app.database import get_db
 from app.models.content import Content
 from app.models.distribution import Distribution, DistributionStatus
+from app.services.platforms import get_platform_client
 from app.utils.serializers import model_to_dict
 
 router = APIRouter()
 
-_NO_PLATFORM_CLIENT_MESSAGE = "No platform posting client is configured for this service yet."
+_UNSUPPORTED_PLATFORM_MESSAGE = "No platform posting client exists for '{platform}'."
 
 
 class PublishRequest(BaseModel):
@@ -81,14 +82,33 @@ async def execute_distribution(
         if distribution is None:
             raise HTTPException(status_code=404, detail=f"Distribution not found: {distribution_id}")
 
-        distribution.status = DistributionStatus.FAILED
-        distribution.error_message = _NO_PLATFORM_CLIENT_MESSAGE
+        content = await db.get(Content, distribution.content_id)
+
+        client = get_platform_client(distribution.platform)
+        if client is None:
+            distribution.status = DistributionStatus.FAILED
+            distribution.error_message = _UNSUPPORTED_PLATFORM_MESSAGE.format(platform=distribution.platform)
+        else:
+            publish_result = await client.publish(content.title, content.body or "")
+            if publish_result.success:
+                distribution.status = DistributionStatus.PUBLISHED
+                distribution.platform_post_id = publish_result.post_id
+                distribution.published_at = datetime.utcnow()
+                distribution.error_message = None
+            else:
+                distribution.status = DistributionStatus.FAILED
+                distribution.error_message = publish_result.error
+                distribution.retry_count = (distribution.retry_count or 0) + 1
+
         await db.commit()
         await db.refresh(distribution)
 
-        logger.warning(f"Distribution execute attempted but no platform client exists: {distribution_id}")
         result = model_to_dict(distribution)
-        result["error"] = _NO_PLATFORM_CLIENT_MESSAGE
+        if distribution.status == DistributionStatus.FAILED:
+            logger.warning(f"Distribution execute failed for {distribution_id}: {distribution.error_message}")
+            result["error"] = distribution.error_message
+        else:
+            logger.info(f"Distribution {distribution_id} published to {distribution.platform}: {distribution.platform_post_id}")
         return result
 
     except HTTPException:
