@@ -9,9 +9,10 @@ from datetime import datetime
 import uuid
 
 from app.database import Base
+from app.models.tenant_base import TenantBase
 
 
-class CalendarEntry(Base):
+class CalendarEntry(TenantBase, Base):
     """Calendar entry model"""
     __tablename__ = "calendar_entries"
     

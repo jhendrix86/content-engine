@@ -9,9 +9,10 @@ from datetime import datetime
 import uuid
 
 from app.database import Base
+from app.models.tenant_base import TenantBase
 
 
-class SEOAnalysis(Base):
+class SEOAnalysis(TenantBase, Base):
     """SEO analysis model"""
     __tablename__ = "seo_analyses"
     
@@ -45,7 +46,7 @@ class SEOAnalysis(Base):
         return f"<SEOAnalysis {self.content_id} - {self.overall_score}>"
 
 
-class Keyword(Base):
+class Keyword(TenantBase, Base):
     """Keyword model"""
     __tablename__ = "keywords"
     

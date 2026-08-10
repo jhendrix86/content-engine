@@ -10,6 +10,7 @@ import uuid
 import enum
 
 from app.database import Base
+from app.models.tenant_base import TenantBase
 
 
 class ContentType(str, enum.Enum):
@@ -31,7 +32,7 @@ class ContentStatus(str, enum.Enum):
     ARCHIVED = "archived"
 
 
-class Content(Base):
+class Content(TenantBase, Base):
     """Content model"""
     __tablename__ = "content"
     

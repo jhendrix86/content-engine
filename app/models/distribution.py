@@ -10,6 +10,7 @@ import uuid
 import enum
 
 from app.database import Base
+from app.models.tenant_base import TenantBase
 
 
 class DistributionStatus(str, enum.Enum):
@@ -21,7 +22,7 @@ class DistributionStatus(str, enum.Enum):
     FAILED = "failed"
 
 
-class Distribution(Base):
+class Distribution(TenantBase, Base):
     """Distribution model"""
     __tablename__ = "distributions"
     
