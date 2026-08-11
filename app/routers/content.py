@@ -14,6 +14,7 @@ from loguru import logger
 
 from app.database import get_db
 from app.models.content import Content, ContentType, ContentStatus
+from app.models.tenant_base import apply_tenant_context
 from app.services.ai_writer import AIWriter
 from app.utils.serializers import model_to_dict
 
@@ -78,6 +79,9 @@ async def generate_content(
             generation_prompt=result.get("prompt"),
             extra_metadata={"generation_result": result},
         )
+        
+        # Apply tenant context automatically
+        apply_tenant_context(content)
 
         db.add(content)
         await db.commit()
@@ -130,6 +134,10 @@ async def repurpose_content(
                 generation_prompt=result.get("prompt"),
                 extra_metadata={"generation_result": result, "repurposed_from": str(source.id)},
             )
+            
+            # Apply tenant context automatically
+            apply_tenant_context(derivative)
+            
             db.add(derivative)
             derivatives.append(derivative)
 

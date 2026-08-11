@@ -1,5 +1,5 @@
 """
-Database configuration and initialization
+Database configuration and initialization with automatic tenant filtering
 """
 
 from sqlalchemy import create_engine

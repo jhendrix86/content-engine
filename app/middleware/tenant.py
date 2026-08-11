@@ -29,9 +29,18 @@ async def tenant_middleware(request: Request, call_next):
     auth_header = request.headers.get("Authorization")
     if auth_header and auth_header.startswith("Bearer "):
         token = auth_header[7:]  # Remove "Bearer " prefix
-        # In production, you'd decode the JWT and extract tenant_id from claims
-        # For now, this is a placeholder
-        logger.debug("Authorization header present, JWT extraction not yet implemented")
+        # JWT decoding implementation - placeholder for production
+        # In production, you would decode the JWT and extract tenant_id from claims
+        # Example:
+        # import jwt
+        # try:
+        #     payload = jwt.decode(token, settings.jwt_secret, algorithms=["HS256"])
+        #     tenant_id = payload.get("tenant_id")
+        #     if tenant_id:
+        #         tenant_id = UUID(tenant_id)
+        # except jwt.InvalidTokenError:
+        #     logger.warning("Invalid JWT token")
+        logger.debug("Authorization header present, JWT extraction placeholder")
     
     # Method 2: From X-Tenant-ID header (for testing/internal calls)
     tenant_id_header = request.headers.get("X-Tenant-ID")
