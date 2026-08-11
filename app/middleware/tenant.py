@@ -8,7 +8,7 @@ and sets it in the tenant context for database filtering.
 from fastapi import Request, HTTPException, status
 from uuid import UUID
 from loguru import logger
-from app.tenant_context import set_tenant_context
+from app.tenant_context import set_tenant_context, clear_tenant_context
 
 
 async def tenant_middleware(request: Request, call_next):
@@ -55,11 +55,17 @@ async def tenant_middleware(request: Request, call_next):
                 detail="Invalid tenant_id format in X-Tenant-ID header"
             )
     
-    # Set the tenant context if found
+    # Set (or explicitly clear) the tenant context for this request.
+    # ContextVar state can otherwise leak across requests that share the
+    # same context chain (e.g. sequential calls from the same task/
+    # connection) if a request without a tenant header simply left a
+    # prior request's tenant_id in place instead of clearing it.
     if tenant_id:
         set_tenant_context(tenant_id)
-    
+    else:
+        clear_tenant_context()
+
     # Process the request
     response = await call_next(request)
-    
+
     return response
