@@ -11,6 +11,7 @@ import os
 os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite://")
 os.environ.setdefault("OPENAI_API_KEY", "")
 
+import pytest
 import pytest_asyncio
 from asgi_lifespan import LifespanManager
 from httpx import AsyncClient, ASGITransport
@@ -29,6 +30,27 @@ database_module.AsyncSessionLocal = database_module.async_sessionmaker(
 )
 
 from app.main import app  # noqa: E402
+from unkey_auth import middleware as unkey_middleware  # noqa: E402
+from unkey_auth.client import UnkeyClient  # noqa: E402
+from unkey_auth.config import Config  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def _unkey_fail_open_by_default(monkeypatch):
+    """
+    This engine's real .env now has a real UNKEY_ROOT_KEY (2026-08-12) so
+    engine-to-engine calls get real verification - but that means
+    unkey_auth.config.Config.from_env() would reload it fresh from disk on
+    every request (deliberately - see its own docstring), which defeats
+    even monkeypatch.delenv("UNKEY_ROOT_KEY", ...): the env var comes back
+    the moment anything calls from_env() again. Force a disabled Config
+    directly (bypassing from_env()/load_dotenv() entirely) so the rest of
+    this suite keeps testing real business logic without needing a real
+    Unkey-issued client key for every request. test_unkey_auth.py's own
+    tests override this per-test to specifically exercise enforcement.
+    """
+    monkeypatch.setattr(unkey_middleware, "_client", UnkeyClient(Config(unkey_root_key="")))
+    monkeypatch.setattr(unkey_middleware, "_warned_disabled", False)
 
 
 @pytest_asyncio.fixture

@@ -19,7 +19,17 @@ def reset_unkey_singleton(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_routes_work_without_auth_header_when_unkey_not_configured(client, monkeypatch):
-    monkeypatch.delenv("UNKEY_ROOT_KEY", raising=False)
+    # Not monkeypatch.delenv("UNKEY_ROOT_KEY") - this engine's real .env now
+    # has a real key (2026-08-12), and Config.from_env() deliberately
+    # reloads it fresh from disk via load_dotenv() every time it's called
+    # (see config.py's own docstring on why), which would silently undo an
+    # env-var deletion. Construct a disabled Config directly instead, same
+    # pattern the other tests in this file already use for the enabled case.
+    monkeypatch.setattr(
+        unkey_middleware,
+        "_client",
+        UnkeyClient(Config(unkey_root_key="", unkey_base_url="https://api.unkey.com/v2")),
+    )
 
     response = await client.get("/content/")
 
