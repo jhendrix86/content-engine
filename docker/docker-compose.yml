@@ -3,8 +3,13 @@ version: '3.8'
 services:
   content-engine:
     build:
-      context: ..
-      dockerfile: docker/Dockerfile
+      # Workspace root, not just this repo - needed to reach the
+      # unkey-auth sibling package the Dockerfile copies in (see its own
+      # comment for why). Run `docker compose -f docker/docker-compose.yml
+      # build` from content-engine/ as before; this context path is
+      # relative to this compose file's own location either way.
+      context: ../..
+      dockerfile: content-engine/docker/Dockerfile
     container_name: content-engine
     ports:
       - "8040:8040"
