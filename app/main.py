@@ -18,6 +18,7 @@ from app.database import init_db
 from app.services.ai_writer import AIWriter
 from app.routers import content, seo, calendar, distribution, analytics
 from app.middleware.tenant import tenant_middleware
+from empire_operators.middleware import SafetyBoundaryMiddleware
 
 
 @asynccontextmanager
@@ -64,6 +65,12 @@ app.add_middleware(
 
 # Add tenant middleware for multi-tenancy support
 app.middleware("http")(tenant_middleware)
+
+# Reject request bodies matching known-unsafe patterns (prompt injection,
+# `drop table`, `<script>`) before they reach a router. empire_os
+# SafetyBoundaryOperator — first Phase B wire, see
+# empire_os/EMPIRE_OS_INTEGRATION_ANALYSIS.md + SECURITY_REVIEW.md.
+app.add_middleware(SafetyBoundaryMiddleware)
 
 # Include routers - gated by Unkey key verification (fails open until
 # UNKEY_ROOT_KEY is configured; see unkey-auth/README.md)

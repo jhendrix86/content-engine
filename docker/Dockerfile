@@ -18,6 +18,7 @@ RUN apt-get update && apt-get install -y \
 # resolution rule for "-e ../X": relative to the process's cwd at install
 # time, not to requirements.txt's own location (verified empirically).
 COPY unkey-auth/ /app/unkey-auth/
+COPY empire-operators/ /app/empire-operators/
 
 WORKDIR /app/content-engine
 COPY content-engine/requirements.txt .
