@@ -17,7 +17,7 @@ from app.config import settings
 from app.database import init_db
 from app.services.ai_writer import AIWriter
 from app.routers import content, seo, calendar, distribution, analytics
-from app.middleware.tenant import tenant_middleware
+from app.middleware.tenant import TenantMiddleware
 from empire_operators.middleware import SafetyBoundaryMiddleware
 
 
@@ -64,7 +64,7 @@ app.add_middleware(
 )
 
 # Add tenant middleware for multi-tenancy support
-app.middleware("http")(tenant_middleware)
+app.add_middleware(TenantMiddleware)
 
 # Reject request bodies matching known-unsafe patterns (prompt injection,
 # `drop table`, `<script>`) before they reach a router. empire_os
