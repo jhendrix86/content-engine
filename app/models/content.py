@@ -3,7 +3,7 @@ Content models
 """
 
 from sqlalchemy import Column, String, Integer, DateTime, Boolean, Enum, ForeignKey, Text, JSON
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Uuid
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import uuid
@@ -36,7 +36,7 @@ class Content(TenantBase, Base):
     """Content model"""
     __tablename__ = "content"
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
     
     # Content details
     title = Column(String(500), nullable=False)
@@ -49,7 +49,7 @@ class Content(TenantBase, Base):
 
     # Repurposing: set when this piece was generated FROM another piece
     # (the "pillar"), rather than from a topic directly.
-    source_content_id = Column(UUID(as_uuid=True), ForeignKey("content.id"), nullable=True)
+    source_content_id = Column(Uuid(as_uuid=True), ForeignKey("content.id"), nullable=True)
 
     # Generation metadata
     topic = Column(String(500), nullable=True)

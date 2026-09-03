@@ -13,6 +13,10 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    # Cap the job so a hung test surfaces in ~minutes, not after the
+    # default 6h. pytest-timeout (below) kills the individual offender
+    # first and prints its traceback; this is the outer backstop.
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
         with:
@@ -40,8 +44,11 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest pytest-asyncio
+          pip install pytest pytest-asyncio pytest-timeout
 
       - name: Run tests
         working-directory: repo
-        run: pytest -q
+        # --timeout: kill any single test stuck >60s and dump its traceback
+        # (a hung network call / TestClient lifespan deadlock names itself
+        # instead of silently eating the whole job).
+        run: pytest -q --timeout=60 --timeout-method=thread

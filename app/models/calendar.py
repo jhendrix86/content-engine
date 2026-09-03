@@ -3,7 +3,7 @@ Calendar models
 """
 
 from sqlalchemy import Column, String, Integer, DateTime, Boolean, ForeignKey, JSON
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Uuid
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import uuid
@@ -16,8 +16,8 @@ class CalendarEntry(TenantBase, Base):
     """Calendar entry model"""
     __tablename__ = "calendar_entries"
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    content_id = Column(UUID(as_uuid=True), ForeignKey("content.id"), nullable=True)
+    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    content_id = Column(Uuid(as_uuid=True), ForeignKey("content.id"), nullable=True)
     
     # Entry details
     title = Column(String(500), nullable=False)

@@ -3,7 +3,7 @@ SEO models
 """
 
 from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, Text, JSON
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Uuid
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import uuid
@@ -16,8 +16,8 @@ class SEOAnalysis(TenantBase, Base):
     """SEO analysis model"""
     __tablename__ = "seo_analyses"
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    content_id = Column(UUID(as_uuid=True), ForeignKey("content.id"), nullable=False)
+    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    content_id = Column(Uuid(as_uuid=True), ForeignKey("content.id"), nullable=False)
     
     # SEO scores
     overall_score = Column(Integer, nullable=True)
@@ -50,8 +50,8 @@ class Keyword(TenantBase, Base):
     """Keyword model"""
     __tablename__ = "keywords"
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    content_id = Column(UUID(as_uuid=True), ForeignKey("content.id"), nullable=True)
+    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    content_id = Column(Uuid(as_uuid=True), ForeignKey("content.id"), nullable=True)
     
     # Keyword details
     keyword = Column(String(255), nullable=False)

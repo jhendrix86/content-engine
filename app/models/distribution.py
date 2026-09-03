@@ -3,7 +3,7 @@ Distribution models
 """
 
 from sqlalchemy import Column, String, Integer, DateTime, Boolean, Enum, ForeignKey, Text, JSON
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Uuid
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import uuid
@@ -26,8 +26,8 @@ class Distribution(TenantBase, Base):
     """Distribution model"""
     __tablename__ = "distributions"
     
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    content_id = Column(UUID(as_uuid=True), ForeignKey("content.id"), nullable=False)
+    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    content_id = Column(Uuid(as_uuid=True), ForeignKey("content.id"), nullable=False)
     
     # Distribution details
     platform = Column(String(50), nullable=False)
