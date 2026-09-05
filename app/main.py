@@ -43,7 +43,14 @@ app = FastAPI(
     title="Content Engine",
     description="AI-powered content generation and management system for the Autonomous Company OS",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
+    # SECURITY_REVIEW.md finding: /docs, /redoc, /openapi.json were reachable
+    # unauthenticated on every engine (dynamic-pentest-confirmed) - a full
+    # interactive API browser plus every unauth write path. Disabled unless
+    # DEBUG=true.
+    docs_url="/docs" if settings.debug else None,
+    redoc_url="/redoc" if settings.debug else None,
+    openapi_url="/openapi.json" if settings.debug else None,
 )
 
 # Configure CORS — see SECURITY_REVIEW.md finding #1: no wildcard with
