@@ -14,7 +14,7 @@ from datetime import datetime
 from unkey_auth import require_api_key
 
 from app.config import settings
-from app.database import init_db
+from app.database import init_db, wait_for_database
 from app.services.ai_writer import AIWriter
 from app.routers import content, seo, calendar, distribution, analytics
 from app.middleware.tenant import TenantMiddleware
@@ -25,6 +25,11 @@ from empire_operators.middleware import SafetyBoundaryMiddleware
 async def lifespan(app: FastAPI):
     """Application lifespan manager"""
     logger.info("Starting Content Engine...")
+
+    # Wait out any post-reboot window where Postgres isn't accepting
+    # connections yet before the first query. Without this the container
+    # crash-loops instead of self-healing (BA-13).
+    await wait_for_database()
 
     # Initialize database
     await init_db()
